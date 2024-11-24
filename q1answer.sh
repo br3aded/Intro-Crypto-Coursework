@@ -34,38 +34,61 @@ openssl help
 
 # ======= Please provide your answers below: ========
 # Q1.a Command:
-
+openssl version
 # Q1.a Output
-#
+#OpenSSL 3.2.3 3 Sep 2024 (Library: OpenSSL 3.2.3 3 Sep 2024)
 
 # Q1.b Command:
-
-# Q1.b Output
-#
+openssl sha1 crypto1.zip.enc
+openssl sha1 crypto2.zip.enc
+# Q1.b Output [1]
+#SHA1(crypto1.zip.enc)= 8ca275a98312ab337e6c0dbacb9c4675d0043b28
+#SHA1(crypto2.zip.enc)= 8c28283f4357858919ae316f8bb7bfcc7e8b2f1a
 
 # Q1.c Command:
+openssl aes-256-cbc -d -in crypto1.zip.enc -out crypto1decrypted.zip -pass pass:cryptorulez -pbkdf2
 
-# Q1.c Output
-#
+# Q1.c Output [2]
+# outputs file crypto1decrypted.zip
 
 # Q1.d Command:
-
-# Q1.d Output
-#
+openssl rand -base64 -out randvalue.txt 16
+# Q1.d Output [3]
+# ouputs 16 bytes of random text in base64 to randvalue.txt
 
 # Q1.e Command:
-
-# Q1.e Output
-#
+openssl pkeyutl -encrypt -inkey public-key.pem -pubin -in randvalue.txt | openssl base64
+# Q1.e Output [4]
+#ZWPnO9oeespKm3ha5m524cgHUPDZ/1PvrvhhASHkPiANVDqvba1t4dDbeU4eYMs6JWq+yE33UMUheNPr0qzXlygzezvFsj4B9Cl1aQuv0GFSNjC8OhSBM1dVphmF3bkM5BfnYtpFAD6604ks4hXzpUx6pO8EnYxIepMjW0e+9M7vtBDJmqRCJzDhdGqgVu2a2Xim9DLPHho/pHEIuo2jWLiEDV5GN9PbB7RxXPhuKcAH8ek5TvjLz5UxjPg7NU0qhMEJV58XQKF5yMiSP3ZcwM95BBkMV/p6Qvz+r8g6OXU0G9daMB4CVCzJEe1+t6+BzPfWS68THnZ0CmzFu8sY/w==
 
 # Q1.f Command:
-
+openssl ts -reply -in key_ts.tsr -text
 # Q1.f Output
-#
+# Using configuration from C:/Program Files/Git/mingw64/etc/ssl/openssl.cnf
+#Status info:
+#Status: Granted.
+#Status description: unspecified
+#Failure info: unspecified
+
+#TST info:
+#Version: 1
+#Policy OID: 2.16.840.1.114412.7.1
+#Hash Algorithm: sha256
+#Message data:
+#    0000 - 8a 8b 0f c7 a2 23 de c7-ee 24 57 df 1d ce 96 37   .....#...$W....7
+#    0010 - f3 44 24 27 a8 58 23 9f-66 0e 28 18 25 f1 91 58   .D$'.X#.f.(.%..X
+#Serial number: 0x213F5219044348D192F8982D9F5AD2B2
+#Time stamp: Nov  8 11:21:36 2024 GMT
+#Accuracy: unspecified
+#Ordering: no
+#Nonce: unspecified
+#TSA: unspecified
+#Extensions:
+
 
 # Q1.g Answers
 # When  was  the  timestamp  created?
-#
+# Nov  8 11:21:36 2024 GMT
 # What  does  that  imply  about  the  key  file?
 #
 
@@ -87,6 +110,8 @@ openssl help
 #
 
 # Sources:
-# [1]
-# [2]
-# [3]
+# [1] https://www.unixfu.ch/calculate-checksums-using-openssl/
+# [2] https://opuslearning.co.uk/decrypt-files-with-openssl-mastering-aes-256-cbc-decryption/
+# [3] https://docs.openssl.org/1.1.1/man1/rand/
+# [4] https://docs.openssl.org/master/man1/openssl-pkeyutl/#notes
+# [5] https://docs.openssl.org/3.4/man1/openssl-ts/#timestamp-request-generation
