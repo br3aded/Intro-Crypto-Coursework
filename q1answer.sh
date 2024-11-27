@@ -48,12 +48,12 @@ openssl sha1 crypto1.zip.enc && openssl sha1 crypto2.zip.enc
 openssl aes-256-cbc -d -in crypto1.zip.enc -out crypto1decrypted.zip -pass pass:cryptorulez -pbkdf2
 
 # Q1.c Output [2]
-# outputs file crypto1decrypted.zip
+#no terminal output. Outputs file crypto1decrypted.zip
 
 # Q1.d Command:
 openssl rand -base64 -out randvalue.txt 16
 # Q1.d Output [3]
-# ouputs 16 bytes of random text in base64 to randvalue.txt
+#No terminal output. Ouputs 16 bytes of random text in base64 to randvalue.txt
 
 # Q1.e Command:
 openssl pkeyutl -encrypt -inkey public-key.pem -pubin -in randvalue.txt | openssl base64
