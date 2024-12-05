@@ -9,8 +9,11 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{tikz}
+\usepackage{lineno}
 \usepackage{url}
 \usepackage{xspace}
+\usepackage{biblatex} % Added for citations
+\addbibresource{citations.bib} % Path to your citations.bib file
 
 %%% TIKZ
 \usetikzlibrary{calc}
@@ -63,6 +66,7 @@
 
 \begin{document}
 
+%\linenumbers
 \title{\module\\[0.25cm]\assessment}
 \author{\university}
 \date{Released: \releaseDate\\[0.25cm]Due: \dueDate}
@@ -73,7 +77,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{question}[Cryptographic Software \points{25}]
-  Add your answers to \texttt{q1answer.sh}.
+  Answers in \texttt{q1answer.sh}.
 \end{question}
 
 \newpage
@@ -83,8 +87,42 @@
 \begin{question}[Hash Functions \points{25}]
   \fixoffset
   \begin{enumerate}[label=(\alph*)]
-    \item Add your answers here.
-    \item ...
+    \item The size of IV will be 64 bits as 3TDEA operates on blocks of this bit size which is used in \(H \). The message size is of arbitrary length \(l \) and is processed in 64 bit blocks, allowing for any size messages to be hashed. The fingerprint of \(H \) is 64 bits as 3TDEA outputs blocks of this size.
+    The mathematical maps for \(H \) and \(f \) are
+    \[ H : \{0,1\}^l \rightarrow \{0,1\}^{64}\]
+    \[ f : \{0,1\}^{64}  \times \{0,1\}^{64}\rightarrow \{0,1\}^{64}\]
+    
+    \item A PPT adversary \(A\) can produce a length extension attack on \(H\) applied to message \(m\) given \(H(m)\) and \(|m|\) is known. They can produce a valid message hash for \(m' \in \{0,1\}^*\). If \(m' = m_b,m_{b+1},...,m_{b+b'-1}\), \(A\) can take \(H(m),...,h_{b+b'}\) and \(m_{b+1},...,m_{b+b'}\) as inputs in the given  Merkle-Damgard Construction and produce \(h=H(m||m')\) a valid message hash. The length extension attack depends on the number of blocks in \(m'\) which is linear and the block length of the 3TDEA function is 64 which is negligible, so to compute we get a complexity of \(O(n)\). This means this attack is very feasible to carry out and can be executed efficiently.
+    A second form of attack is a herding attack. An adversary \(A\) can precompute a diamond tree structure of a set of message chains converging to a single hash value h. Given a prefix \(P\) the attacker can brute force compute a bridge, a sequence of message blocks, taking \(P\) to one of the states within the diamond tree. It is then trivial to get \(h=H(P||bridge||diamond\_path)\) \cite{kelsey2006herding}. This is a form of secondary image collision attack. The complexity of the attack depends on the precomputation and bridge finding phase. For a diamond tree with \(2^t\) branches the complexity is \(O(2^{t/2})\). The bridge finding phase is \(O(n)\) as it is brute force search. This gives the overall complexity of \(O(2^{t/2})\). This attack is feasible to be carried out however it would require a high amount of computational power for non small hash values.
+    
+    \item To improve the security we could use a HMAC construction which incorporates our Merkle-Damgard hash function. The involves the use of a secret key \(k\) used as input with the \(IV\) applied to compression function \(f\). The Merkle-Damgard is then carried out on \(m\). A final application of \(f\) is applied to output of MD on \(m\) with \(f(k,IV)\) to get our hashed message. This prevents against both length extension and herding attacks as messages cannot be modified or extended without the knowledge of \(k\) ,making the attack complexity unfeasible.
+    
+    \item To prove second-preimage-resistance for the function \(f\) given a pair \((x,y)\) it is hard to find a distinct \(x',y'\) s.t. \(f(x,y) = f(x',y') \). 
+    
+    This is \[E^{-1}(x,x \oplus y \oplus 10^{b-2}1) \oplus x = E^{-1}(x',x' \oplus y' \oplus 10^{b-2}1) \oplus x'\]
+    We have two distinct cases when \(x = x'\) and \(x \neq x'\). 
+    
+    When \(x = x'\) we get \[E^{-1}(x,x \oplus y \oplus 10^{b-2}1) \oplus x = E^{-1}(x,x \oplus y' \oplus 10^{b-2}1) \oplus x\]
+    Which means \[E^{-1}(x,x \oplus y \oplus 10^{b-2}1) = E^{-1}(x,x \oplus y' \oplus 10^{b-2}1) \]
+    For this to hold \(x \oplus y \oplus 10^{b-2}1 = x \oplus y' \oplus 10^{b-2}1 \)
+
+    Which implies that \(y = y'\) resulting in a non-distinct pair and second-preimage-resistance for this case.
+
+    The second case where \(x \neq x'\) gives \(E^{-1}(x,x \oplus y \oplus 10^{b-2}1) \oplus x = E^{-1}(x',x' \oplus y' \oplus 10^{b-2}1) \oplus x'\). As both instances of the decrypt function use distinct keys, based on the security of the function \(E\), which we assume is strong, they should not produce the same value even if \(y\) is varied. Therefore it is infeasible to find distinct pairs that produce the same output. Thus we cannot have preimage resistance for this case and therefore for the function \(f\). \qed
+    
+    \item To prove collision resistance we have two cases either:
+
+    Case 1 - \(F\) is collision-resistant and \(G\) is not
+
+    Case 2 - \(G\) is collision-resistant and \(F\) is not
+
+    The hash function \(H(x) = F(x||G(x))||G(x||F(x))\). If either \(F(x||G(x))\) or \(G(x||F(x))\) are collision resistant so is \(H(x)\). 
+
+    For the first case \(F\) is collision-resistant \(\implies\) \(F(x||G(x))\) is collision-resistant \(\implies\)  \(H(x)\) is collision-resistant.
+
+    For the second case \(G\) is collision-resistant \(\implies\)  \(G(x||F(x))\) is collision-resistant \(\implies\)  \(H(x)\) is collision-resistant.
+
+    Therefore, in both cases we have collision-resistance and thus \(H(x)\) must be collision-resistant. \qed
   \end{enumerate}
 \end{question}
 
@@ -95,8 +133,113 @@
 \begin{question}[Digital Signatures \points{25}]
   \fixoffset
   \begin{enumerate}[label=(\alph*)]
-    \item Add your answers here.
-    \item ...
+    \item \(N = 99301 = 199 \times 499\) two distinct primes.
+
+    Using Euler-Totient function formula we get \(\phi(99301) = \phi(199 \times 499) = \phi(199) \times \phi(499) = 198 \times 498 = 98604\)
+
+    By definition of RSA signature scheme \(ed \equiv 1 mod 98604\). This means we need to find \(5^{-1} \mod 98604\). As \(98605 \equiv 5 \times 19721 \equiv 1 \mod 98604\)
+    \[d = 19721\]
+    
+    \item For signature \(s\) , \(s^e \equiv m \mod n\). 
+    This is \[2024^5 \equiv m \mod 99301\]
+    Using fast modular exponentiation
+    \[2024^2 \equiv 25235 \mod 99301\]
+    \[2024^4 \equiv 25235^2 \equiv 87213 \mod 99301\]
+    \[2024^ 5\equiv 87213 \times 2024 \equiv 61235 \mod 99301\]
+    This is \[m = 61235\]
+    We can verify this by checking \[61235^{19721} \equiv 2024 \mod 99301\]
+    
+    \item CRT states that given an equation \(x \equiv y \mod pq \) we can solve \(x \equiv y \mod p\) and \(x \equiv y \mod q\) separately and combine to find a solution. Applying this to the given example of RSA signature scheme to solve \(s \leftarrow m^{19721} \mod 99301\) we get 
+    \[s_1 \equiv m^{19721} \mod 199\]
+    \[s_2 \equiv m^{19721} \mod 499\]
+    Using a corollary of Euler's theorem, for \(a,n\) where \(gcd(a,n) = 1\), \(x \equiv y \mod \varphi(n) \implies a^x \equiv a^y \mod n \). We can reduce powers in our equations
+    \[s_1 \equiv m^{19721 \mod 198} \mod 199\]
+    \[s_2 \equiv m^{19721 \mod 498} \mod 499\]
+    Calculate \(t = s_1 - s_2\) if \(t<0\) then \(t = t + p\) and \(u = q^{-1} \mod p\) the modular inverse of \(q\) for \(p\). Then we can solve for \(S\)
+    \[S = s_2 + (t \times u \mod 199 )\times 499\]
+    Calculating large exponents is resource intensive so by using the CRT we reduce the problem by solving easier sub problems and combining our answer.
+    
+    \item To solve \(s \leftarrow 2024^{19721} \mod 99301\) we can apply CRT to get equations
+    \[s_1 \equiv 2024^{19721} \mod 199\]
+    \[s_2 \equiv 2024^{19721} \mod 499\]
+    Applying the corollary to Euler's theorem we get 
+    \[s_1 \equiv 2024^{19721} \equiv 2024^{19721 \mod 198} \equiv 2024^ {119}\mod 199\]
+    \[s_1 \equiv 2024^{19721} \equiv 2024^{19721 \mod 498} \equiv 2024^ {299}\mod 499\]
+    Using Fast Modular Exponentiation we can solve \(2024^ {119}\mod 199\)
+    \[2024 \equiv 34 \mod 199\]
+    \[2024^{2} \equiv 161 \mod 199\]
+    \[2024^{4} \equiv 161^{2} \equiv 51 \mod 199\]
+    \[2024^{8} \equiv 51^{2} \equiv 14 \mod 199\]
+    \[2024^{16} \equiv 14^{2} \equiv -3 \mod 199\]
+    \[2024^{32} \equiv -3^{2} \equiv 9 \mod 199\]
+    \[2024^{64} \equiv 9^{2} \equiv 81 \mod 199\]
+    \[2024^{119} \equiv 2024^{64} \times 2024^{32} \times 2024^{16} \times 2024^{4} \times 2024^{2} \times 2024 \equiv 153 \mod 199\]
+    Using the same method to solve \(2024^ {299}\mod 499\)
+    \[2024 \equiv 28 \mod 499\]
+    \[2024^{2} \equiv 28^2 \equiv 285 \mod 499\]
+    \[2024^{4} \equiv 285^{2} \equiv -112 \mod 499\]
+    \[2024^{8} \equiv -112^{2} \equiv 69 \mod 499\]
+    \[2024^{16} \equiv 69^{2} \equiv 270 \mod 499\]
+    \[2024^{32} \equiv 270^{2} \equiv 46 \mod 499\]
+    \[2024^{64} \equiv 46^{2} \equiv 120 \mod 499\]
+    \[2024^{128} \equiv 120^{2} \equiv 428 \mod 499\]
+    \[2024^{256} \equiv 428^{2} \equiv 51 \mod 499\]
+    \[2024^{299} \equiv 2024^{256} \times 2024^{32} \times 2024^{8} \times 2024^{2} \times 2024 \equiv 206 \mod 499\]
+    We calculate \[t = 153 -206 \equiv 146 \mod 199\]
+    To find \(u = 499^{-1} \mod 199\) we use the Extended Euclidean Algorithm as such
+    \[499 = 2 \times 199 + 101\]
+    \[199 = 101 + 98\]
+    \[101 = 98 + 3\]
+    \[98 = 32 \times 3 + 2\]
+    \[3 = 2 + 1\]
+    We can now substitute backwards 
+    \[1 = 3 - 2 = 3 - (98 - 32 \times 3) = 33 \times 3 - 98\]
+    \[1 = 33(101 - 98) - 98 = 33 \times 101 -  34 \times 98\]
+    \[1 = 33 \times 101 -34 (199-101) = 67 \times 101 - 34 \times 199\]
+    \[1 = 67(499- 2 \times 199) -  34 \times 199 = 67 \times 499 - 168 \times 199\]
+    This gives \[u \equiv 499^{-1}  \equiv 67 \mod 199\]
+    We can now substitute into the equation \(s = s_2 + (t \times u \mod 199 )\times 499\) to retrieve our signature 
+    \[s = 206 + (146 \times 67 \mod 199 )\times 499\]
+    \[s = 206 + 31 \times 499 = 15675\]
+    
+    \item Given that an adversary knows \(a,b ,y\) for a Schnorr signature scheme and they are given \(\sigma_0\) for \(m_0\) and \(\sigma_1\) for \(m_1\) the can obtain the secret key \(x\) as follows. We know
+    \[\sigma_0 = (s_0,c_0) = (k+c_0x,H(y||m_0))\]
+    \[\sigma_1 = (s_1,c_1) = (ak+b+c_1x,H(y||m_1))\]
+    we can take the equations 
+    \[s_0 = k + c_0x\] and
+    \[s_1 = ak+b+ c_1x\]
+    we can multiply the first equation by \(a\) as this is a known value to the adversary
+    \[as_0 = ak + ac_0x\]
+    then subtracting the second equation from this
+    \[as_0 - s_1 = ak + ac_0x - ak - b - c_1x\]
+    simplifying eliminates value k
+    \[as_0 - s_1 = ac_0x - b - c_1x\]
+    we can rearrange the equation for secret key \(x\)
+    \[\frac{as_0-s_1+b}{ac_0-c_1} = x\]
+    the adversary can verify by checking \(y= g^x\) 
+
+    \item The adversary takes n consecutive signatures. Each signature pair \((\sigma_{i-1},\sigma_i)\) has \(p\) probability that \(k_i = ak_{i-1}+b\) meaning a probability \(1 - p\) that \(k\) is fresh random. 
+    We have n-1 adjacent pairs \((\sigma_0,\sigma_1),(\sigma_1,\sigma_2),...,(\sigma_{n-2},\sigma_{n-1})\)
+    
+    For the adversary to find \(x\) the number of exploitable pairs must be at least one. This means we can find the probability there is at least one exploitable pair.
+    The probability of no exploitable pairs is 
+    \[(1-p)^{n-1}\]
+    Thus probability adversary finds \(x\) for \(n\) consecutive signatures is
+    \[1 - (1-p)^{n-1}\]
+    
+    \item Taking the equation from the previous question we want:
+    \[1 - (1-p)^{n-1} \geq 0.25\] 
+    We can rearrange for \(n\):
+    \[0.75 \geq (1-p)^{n-1}\]
+    Taking the logarithm of both sides:
+    \[\log(0.75) \geq (n-1)\log(1-p)\]
+    We have \(\log(1-p) < 0\) as \(p<1\) so:
+    \[\frac{\log(0.75)}{\log(1-p)}\leq n-1\]
+    Therefore:
+    \[\frac{\log(0.75)}{\log(1-p)} + 1\leq n\]
+    Substitute \(p = 2^{-14}\):
+    \[4714.239233 \leq n\]
+    Thus, n must be at least \(4715\) consecutive signatures for at least \(25\%\)\ probability of extracting \(x\).
   \end{enumerate}
 \end{question}
 
@@ -107,11 +250,51 @@
 \begin{question}[Existential Unforgeability \points{25}]
   \fixoffset
   \begin{enumerate}[label=(\alph*)]
-    \item Add your answers here.
-    \item ...
+    \item Define \(\text{MAC}_1 = (\text{Gen}_1 , \text{Tag}_1 , \text{Verify}_1)\) with
+    \[\text{Gen}_1(\lambda) : k_1 \xleftarrow{\$} \{0,1\}^{\lambda}\]
+    \[\text{Tag}_{1,k_1} : \text{return tag } t_1 \text{ for message } m \text{ using } k_1\]
+    \[\text{Verify}_{1,k_1} : \text{return 1 if } t_1 = \text{Tag}_{1,k_1}(m) \text{ and 0 otherwise}\]
+    Define \(\text{MAC}_2 = (\text{Gen}_2 , \text{Tag}_2 , \text{Verify}_2)\) with
+    \[\text{Gen}_2(\lambda) : k_2 \xleftarrow{\$} \{0,1\}^{\lambda}\]
+    \[\text{Tag}_{2,k_2} : \text{return tag } t_2 \text{ for message } m \text{ using } k_2\]
+    \[\text{Verify}_{1,k_2} : \text{return 1 if } t_2 = \text{Tag}_{2,k_2}(m) \text{ and 0 otherwise}\]
+    Form a single MAC = (Gen,Tag,Verify) as such
+    \[\text{Gen}(\lambda) : \text{return } k=(\text{Gen}_1(\lambda),\text{Gen}_2(\lambda)) = (k_1,k_2) \]
+    \[\text{Tag}_k(m) :  \text{return } t = (\text{Tag}_{1,k_1}(m),\text{Tag}_{2,k_2}(m)) = (t_1,t_2)\]
+    \[\text{Verify}_k(m,t) : \text{return 1 if } \text{Verify}_{1,k_1}(m,t_1) = 1 \text{ and } \text{Verify}_{2,k_2}(m,t_2) = 1 \text{ , otherwise 0}\]
+    To prove this holds we must show correctness
+    \[\forall \lambda \in \mathbb{N}\ , \forall k_1 \xleftarrow{\$} \text{Gen}_1(1^\lambda) , \forall k_2 \xleftarrow{\$} \text{Gen}_2(1^\lambda) , \forall m \in \{0,1\}^*\]
+    \[\text{Verify}_k(m,(\text{Tag}_k(m)) = \text{Verify}_k(m,(\text{Tag}_{1,k_1}(m),\text{Tag}_{2,k_2}(m))  = \text{Verify}_k(m,(t_1,t_2)) = \text{Verify}_k(m,t)\]
+    By our definition of \(\text{Verify}_k(m,t)\) if \(\text{Verify}_{1,k_1}(m,t_1) = 1 \text{ and } \text{Verify}_{2,k_2}(m,t_2) = 1\) we have correctness. Both of these follow by definitions of \( \text{MAC}_1 \text{ and } \text{MAC}_2 \). \qed
+    
+     
+    \item To show that the given MAC construction is EUF-CMA secure with respect to \(\lambda\) is to show that for every PPT adversary \(A\) \(\exists \text{ negligible function negl s.t.}\)
+    \[Pr[Game_{A,MAC}^{euf-cma}(\lambda) = 1] \leq negl(\lambda)\]
+    From the MAC forgery game the adversary \(A\) must 
+    \[\text{Verify}_k(m,t) = 1 \text{ with } m\notin Q\]
+    where \(k,m,t\) are defined as in the MAC construction and \(Q\) is the set of message-tag pairs obtained from the Oracle by \(A\)
+    
+    From the definition of Verify in MAC, for the adversary \(A\) to win the game they must find
+    \[\text{Verify}_{1,k_1}(m,t_1) = 1 \text{ and } \text{Verify}_{2,k_2}(m,t_2) = 1 \text{ with } m \notin Q\]
+    This means for adversary \(A\) to win the MAC forgery game, \(A\) must win the forgery game for both \(\text{MAC}_1\) and \(\text{MAC}_2\).
+    
+    Taking the contrapositive of this statement we get 
+    \[
+    \begin{aligned}
+    \Pr[\text{Game}_{A,\text{MAC}_1}^{\text{euf-cma}}(\lambda) = 1] &\leq \text{negl}(\lambda) \lor \Pr[\text{Game}_{A,\text{MAC}_2}^{\text{euf-cma}}(\lambda) = 1] \leq \text{negl}(\lambda) \\
+    &\implies \Pr[\text{Game}_{A,\text{MAC}}^{\text{euf-cma}}(\lambda) = 1] \leq \text{negl}(\lambda).
+    \end{aligned}
+    \]
+
+    By definitions of \(\text{MAC}_1\) and \(\text{MAC}_2\) we know that one of them is EUF-CMA and thus the above statement holds and we have that
+    \[Pr[Game_{A,MAC}^{euf-cma}(\lambda) = 1] \leq negl(\lambda)\]
+    meaning that MAC is EUF-CMA. \qed
+
+    
   \end{enumerate}
 \end{question}
 
 \newpage
+\printbibliography
 
 \end{document}
